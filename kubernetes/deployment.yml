@@ -16,6 +16,6 @@ spec:
     spec:
       containers:
       - name: devsecops-project
-        image: ngozin/devsecops-project:1
+        image: ngozin/devsecops-project:12
         ports:
         - containerPort: 8080
