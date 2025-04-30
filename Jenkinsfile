@@ -1,5 +1,5 @@
 pipeline {
-    agent { label 'demo' }
+    agent any
 
     parameters {
         password(name: 'PASSWD', defaultValue: '', description: 'Enter your GitHub Personal Access Token')
