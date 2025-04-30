@@ -1,21 +1,37 @@
 pipeline {
- agent { label 'demo' }
- parameters {
-     password(name: 'PASSWD', defaultValue: '', description: 'Please Enter your Gitlab password')
-     string(name: 'IMAGETAG', defaultValue: '1', description: 'Please Enter the Image Tag to Deploy?')
-     choice(name:'environment', choices: ['functional', 'integration', 'regression', 'uat', 'release' ] ,description: 'select where need to deploy')
- }
- stages {
-  stage('Deploy')
-  {
-    steps { 
-        git branch: 'springboot', credentialsId: 'GitlabCred', url: 'https://gitlab.com/learndevopseasy/devsecops/spingboot-cd-pipeline.git'
-      dir ("./${params.environment}") {
-              sh "sed -i 's/image: adamtravis.*/image: adamtravis\\/democicd:$IMAGETAG/g' deployment.yml" 
-	    }
-	    sh 'git commit -a -m "New deployment for Build $IMAGETAG"'
-	    sh "git push https://scmlearningcentre:$PASSWD@gitlab.com/learndevopseasy/devsecops/spingboot-cd-pipeline.git"
+    agent { label 'demo' }
+
+    parameters {
+        password(name: 'PASSWD', defaultValue: '', description: 'Enter your GitHub Personal Access Token')
+        string(name: 'IMAGETAG', defaultValue: '1', description: 'Enter the Docker image tag to deploy')
+        choice(name: 'environment', choices: ['functional', 'integration', 'regression', 'uat', 'release'], description: 'Select the deployment environment')
     }
-  }
- }
+
+    stages {
+        stage('Deploy') {
+            steps {
+                script {
+                    // Checkout from GitHub
+                    git branch: 'main', credentialsId: 'GitHubToken', url: 'https://github.com/Ngozi-N/DevSecOps-Project-CD.git'
+
+                    // Update deployment YAML in the correct environment folder
+                    dir("${params.environment}") {
+                        sh """
+                            sed -i 's|image:.*|image: ngozin/devsecops-project:${params.IMAGETAG}|' deployment.yml
+                        """
+                    }
+
+                    // Git config for Jenkins to commit
+                    sh '''
+                        git config user.email "jenkins@example.com"
+                        git config user.name "Jenkins"
+                    '''
+
+                    // Commit and push the changes back to GitHub
+                    sh "git commit -am \"New deployment for Build ${params.IMAGETAG}\""
+                    sh "git push https://${params.PASSWD}@github.com/Ngozi-N/DevSecOps-Project-CD.git"
+                }
+            }
+        }
+    }
 }
