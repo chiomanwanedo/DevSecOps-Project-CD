@@ -15,7 +15,7 @@ pipeline {
                     git branch: 'main', credentialsId: 'GitHubToken', url: 'https://github.com/Ngozi-N/DevSecOps-Project-CD.git'
 
                     // Update deployment YAML in the correct environment folder
-                    dir("${params.environment}") {
+                    dir("kubernetes") {
                         sh """
                             sed -i 's|image:.*|image: ngozin/devsecops-project:${params.IMAGETAG}|' deployment.yml
                         """
