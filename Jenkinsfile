@@ -1,40 +1,49 @@
 pipeline {
-    agent any
+  agent any
 
-    parameters {
-        string(name: 'IMAGETAG', defaultValue: '1', description: 'Enter the Docker image tag to deploy')
-        choice(name: 'environment', choices: ['functional', 'integration', 'regression', 'uat', 'release'], description: 'Select the deployment environment')
+  environment {
+    IMAGE_NAME = 'chiomanwanedo/devsecops-app'
+    GITHUB_CREDENTIAL_ID = 'github'
+  }
+
+  stages {
+    stage('Checkout GitOps Repo') {
+      steps {
+        git url: 'https://github.com/chiomanwanedo/DevSecOps-Project-CD.git', branch: 'main', credentialsId: github
+      }
     }
 
-    stages {
-        stage('Deploy') {
-            steps {
-                script {
-                    // Checkout from GitHub
-                    git branch: 'main', credentialsId: 'GitHubToken', url: 'https://github.com/Ngozi-N/DevSecOps-Project-CD.git'
+    stage('Download Image Tag from CI') {
+      steps {
+        copyArtifacts(
+          projectName: 'DevSecOps-Project',
+          selector: lastSuccessful(),
+          filter: 'image-tag.txt',
+          target: '.'
+        )
+      }
+    }
 
-                    // Update deployment YAML in the correct environment folder
-                    dir("kubernetes") {
-                        sh """
-                            sed -i 's|image:.*|image: ngozin/devsecops-project:${params.IMAGETAG}|' deployment.yml
-                        """
-                    }
-
-                    // Git config for Jenkins to commit
-                    sh '''
-                        git config user.email "jenkins@example.com"
-                        git config user.name "Jenkins"
-                    '''
-
-                    // Commit the change
-                    sh "git commit -am \"New deployment for Build ${params.IMAGETAG}\""
-
-                    // Push using Jenkins credentials
-                    withCredentials([usernamePassword(credentialsId: 'GitHubToken', usernameVariable: 'GITUSER', passwordVariable: 'GITTOKEN')]) {
-                        sh 'git push https://${GITUSER}:${GITTOKEN}@github.com/Ngozi-N/DevSecOps-Project-CD.git'
-                    }
-                }
-            }
+    stage('Update Kubernetes Manifest') {
+      steps {
+        script {
+          def tag = readFile('image-tag.txt').trim()
+          sh """
+            sed -i 's|image: ${IMAGE_NAME}:.*|image: ${IMAGE_NAME}:${tag}|' kubernetes/deployment.yml
+          """
         }
+      }
     }
+
+    stage('Commit & Push Changes') {
+      steps {
+        sh '''
+          git config user.name "chiomanwanedo"
+          git config user.email "chiomavanessa8@gmail.com"
+          git commit -am "Update image tag for deployment"
+          git push origin main
+        '''
+      }
+    }
+  }
 }
