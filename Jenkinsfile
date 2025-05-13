@@ -9,7 +9,7 @@ pipeline {
   stages {
     stage('Checkout GitOps Repo') {
       steps {
-        git url: 'https://github.com/chiomanwanedo/DevSecOps-Project-CD.git', branch: 'main', credentialsId: github
+        git url: 'https://github.com/chiomanwanedo/DevSecOps-Project-CD.git', branch: 'main', credentialsId: "${GITHUB_CREDENTIAL_ID}"
       }
     }
 

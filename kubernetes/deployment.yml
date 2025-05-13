@@ -15,7 +15,7 @@ spec:
         app: devsecops-project
     spec:
       containers:
-      - name: devsecops-project
-        image: ngozin/devsecops-project:12
-        ports:
-        - containerPort: 8080
+        - name: devsecops-project
+          image: chiomavee/wezvatech-demo:latest
+          ports:
+            - containerPort: 31000
