@@ -9,7 +9,9 @@ pipeline {
   stages {
     stage('Checkout GitOps Repo') {
       steps {
-        git url: 'https://github.com/chiomanwanedo/DevSecOps-Project-CD.git', branch: 'main', credentialsId: "${GITHUB_CREDENTIAL_ID}"
+        git url: 'https://github.com/chiomanwanedo/DevSecOps-Project-CD.git', 
+            branch: 'main', 
+            credentialsId: GITHUB_CREDENTIAL_ID
       }
     }
 
@@ -21,6 +23,7 @@ pipeline {
           filter: 'image-tag.txt',
           target: '.'
         )
+        sh 'cat image-tag.txt' // Optional: verify tag in logs
       }
     }
 
@@ -37,13 +40,36 @@ pipeline {
 
     stage('Commit & Push Changes') {
       steps {
-        sh '''
-          git config user.name "chiomanwanedo"
-          git config user.email "chiomavanessa8@gmail.com"
-          git commit -am "Update image tag for deployment"
-          git push origin main
-        '''
+        withCredentials([usernamePassword(
+          credentialsId: GITHUB_CREDENTIAL_ID,
+          usernameVariable: 'GIT_USER',
+          passwordVariable: 'GIT_PASS'
+        )]) {
+          sh '''
+            git config user.name "chiomanwanedo"
+            git config user.email "chiomavanessa8@gmail.com"
+            git add image-tag.txt kubernetes/deployment.yml
+            git commit -m "Update image tag for deployment"
+            git push https://$GIT_USER:$GIT_PASS@github.com/chiomanwanedo/DevSecOps-Project-CD.git main
+          '''
+        }
       }
+    }
+
+    // Optional: Uncomment if you want to auto-sync via ArgoCD CLI (if CLI is installed and configured in the Jenkins agent)
+    // stage('Sync with ArgoCD') {
+    //   steps {
+    //     sh 'argocd app sync your-app-name --grpc-web --insecure'
+    //   }
+    // }
+  }
+
+  post {
+    failure {
+      echo "❌ Deployment pipeline failed. Please check the logs."
+    }
+    success {
+      echo "✅ Deployment pipeline completed successfully."
     }
   }
 }
