@@ -2,7 +2,7 @@ pipeline {
   agent any
 
   environment {
-    IMAGE_NAME = 'chiomanwanedo/devsecops-app'
+    IMAGE_NAME = 'chiomavee/devsecops-app'
     GITHUB_CREDENTIAL_ID = 'github'
   }
 
@@ -23,7 +23,7 @@ pipeline {
           filter: 'image-tag.txt',
           target: '.'
         )
-        sh 'cat image-tag.txt' // Optional: verify tag in logs
+        sh 'cat image-tag.txt' // Debug: See the tag in the logs
       }
     }
 
@@ -48,28 +48,35 @@ pipeline {
           sh '''
             git config user.name "chiomanwanedo"
             git config user.email "chiomavanessa8@gmail.com"
+
+            # Reattach to main branch in case Jenkins detached HEAD
+            git checkout -B main
+
+            # Stage and commit the new image tag and manifest update
             git add image-tag.txt kubernetes/deployment.yml
             git commit -m "Update image tag for deployment"
+
+            # Push back to GitHub using authenticated URL
             git push https://$GIT_USER:$GIT_PASS@github.com/chiomanwanedo/DevSecOps-Project-CD.git main
           '''
         }
       }
     }
 
-    // Optional: Uncomment if you want to auto-sync via ArgoCD CLI (if CLI is installed and configured in the Jenkins agent)
+    // Optional: If you want to trigger ArgoCD manually from Jenkins
     // stage('Sync with ArgoCD') {
     //   steps {
-    //     sh 'argocd app sync your-app-name --grpc-web --insecure'
+    //     sh 'argocd app sync your-app-name --insecure --grpc-web'
     //   }
     // }
   }
 
   post {
-    failure {
-      echo "❌ Deployment pipeline failed. Please check the logs."
-    }
     success {
-      echo "✅ Deployment pipeline completed successfully."
+      echo "✅ CD pipeline completed successfully and changes pushed to GitHub."
+    }
+    failure {
+      echo "❌ CD pipeline failed. Check the logs above for the cause."
     }
   }
 }
