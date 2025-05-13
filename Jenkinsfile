@@ -2,7 +2,7 @@ pipeline {
   agent any
 
   environment {
-    IMAGE_NAME = 'chiomavee/devsecops-app'
+    IMAGE_NAME = 'chiomanwanedo/devsecops-app'
     GITHUB_CREDENTIAL_ID = 'github'
   }
 
