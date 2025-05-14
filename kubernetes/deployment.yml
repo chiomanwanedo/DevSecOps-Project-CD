@@ -18,4 +18,4 @@ spec:
         - name: devsecops-project
           image: chiomavee/wezvatech-demo:latest
           ports:
-            - containerPort: 31000
+            - containerPort: 9090
